@@ -158,6 +158,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   is_ipv6_enabled     = true
   default_root_object = "index.html"
   price_class         = var.cloudfront_price_class
+  comment             = var.cloudfront_description
 
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]

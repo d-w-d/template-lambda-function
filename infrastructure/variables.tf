@@ -31,3 +31,9 @@ variable "cloudfront_price_class" {
   type        = string
   default     = "PriceClass_100"
 }
+
+variable "cloudfront_description" {
+  description = "Description for the CloudFront distribution"
+  type        = string
+  default     = "S3-WRITER-LAMBDA"
+}

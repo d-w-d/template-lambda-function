@@ -18,7 +18,8 @@ lambda-s3-project/
 ├── tsconfig.json             # TypeScript configuration
 ├── jest.config.js            # Jest configuration for testing
 ├── _deploy                   # Script to deploy the project
-├── _destroy                  # Script to destroy AWS infrastructure
+├── _destroy_with_state       # Script to destroy AWS infrastructure using OpenTofu/Terraform state
+├── _destroy_without_state    # Script to destroy AWS infrastructure without OpenTofu/Terraform state
 ├── _ping-endpoint            # Script to test the deployed endpoint
 ├── _test-local               # Script to run local tests
 ├── docker/
@@ -36,7 +37,8 @@ lambda-s3-project/
     ├── main.tf               # Main OpenTofu configuration
     ├── variables.tf          # OpenTofu variables
     ├── outputs.tf            # OpenTofu outputs
-    └── provider.tf           # AWS provider configuration
+    ├── provider.tf           # AWS provider configuration
+    └── tfstate/              # OpenTofu state files
 ```
 
 ## Prerequisites
@@ -46,6 +48,24 @@ lambda-s3-project/
 - OpenTofu installed (or Terraform)
 - Node.js and npm installed locally
 - AWS CLI configured (optional, but helpful for troubleshooting)
+
+## Cleanup Options
+
+This project provides two different ways to clean up AWS resources:
+
+1. **_destroy_with_state** (Default)
+   - Uses OpenTofu/Terraform state to track and remove resources
+   - Requires intact state files in the infrastructure directory
+   - More reliable when state is available
+   - Usage: `./_destroy_with_state` or `npm run destroy`
+
+2. **_destroy_without_state**
+   - Uses AWS CLI commands to remove resources based on naming conventions
+   - Works when OpenTofu/Terraform state is lost or corrupted
+   - Depends only on environment variables in your `.env` file
+   - Usage: `./_destroy_without_state`
+
+Choose the appropriate option based on whether you have valid state files.
 
 ## Setup Instructions
 
@@ -85,7 +105,9 @@ Here's a quick reference for the available npm scripts:
 - `npm run build` - Build both Docker image and Lambda package
 - `npm run test` - Run TypeScript compiler and Jest tests
 - `npm run deploy` - Deploy to AWS (builds package first)
-- `npm run destroy` - Remove all AWS resources
+- `npm run destroy` - Remove all AWS resources (uses OpenTofu state)
+- `./_destroy_with_state` - Remove all AWS resources using OpenTofu state
+- `./_destroy_without_state` - Remove AWS resources without requiring OpenTofu state
 - `npm run all` - Complete build and deploy workflow
 
 ## Environment Variables
@@ -120,6 +142,20 @@ The OpenTofu configuration creates:
 3. Lambda function deployment
 4. API Gateway to expose the Lambda function
 5. CloudFront distribution pointing to the S3 bucket
+
+### State File Management
+
+This project uses a dedicated directory structure for OpenTofu state:
+
+- **Configuration files** (`.tf`): Stored in the `infrastructure/` directory and tracked in version control
+- **State files** (`.tfstate`): Stored in the `infrastructure/tfstate/` directory and excluded from version control
+
+This separation is an infrastructure best practice that:
+- Prevents accidental commits of sensitive state information
+- Reduces the risk of state file corruption
+- Makes it clearer which files should be in version control
+
+For production environments, consider upgrading to a remote state backend (like S3 + DynamoDB).
 
 ## Local Testing
 
