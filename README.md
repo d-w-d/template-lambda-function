@@ -114,9 +114,9 @@ Here's a quick reference for the available npm scripts:
 
 The following environment variables should be defined in the `.env` file:
 
-- `AWS_REGION`: AWS region (e.g., us-east-1)
-- `AWS_ACCESS_KEY_ID`: Your AWS access key
-- `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
+- `aws_region`: AWS region (e.g., us-east-1)
+- `aws_access_key_id`: Your AWS access key
+- `aws_secret_access_key`: Your AWS secret key
 - `S3_BUCKET_NAME`: Name of the S3 bucket to create and use
 - `S3_FILE_PREFIX`: Prefix for files in S3 (default: hello-world)
 - `CLOUDFRONT_PRICE_CLASS`: CloudFront price class (default: PriceClass_100)
