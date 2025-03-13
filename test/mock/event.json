@@ -1,0 +1,44 @@
+{
+  "resource": "/write",
+  "path": "/write",
+  "httpMethod": "GET",
+  "headers": {
+    "Accept": "*/*",
+    "Host": "example.execute-api.us-east-1.amazonaws.com"
+  },
+  "queryStringParameters": null,
+  "pathParameters": null,
+  "stageVariables": null,
+  "requestContext": {
+    "resourceId": "abc123",
+    "resourcePath": "/write",
+    "httpMethod": "GET",
+    "extendedRequestId": "request-id",
+    "requestTime": "09/Apr/2023:12:34:56 +0000",
+    "path": "/prod/write",
+    "accountId": "123456789012",
+    "protocol": "HTTP/1.1",
+    "stage": "prod",
+    "domainPrefix": "testPrefix",
+    "requestTimeEpoch": 1617975296123,
+    "requestId": "request-id",
+    "identity": {
+      "cognitoIdentityPoolId": null,
+      "accountId": null,
+      "cognitoIdentityId": null,
+      "caller": null,
+      "sourceIp": "127.0.0.1",
+      "principalOrgId": null,
+      "accessKey": null,
+      "cognitoAuthenticationType": null,
+      "cognitoAuthenticationProvider": null,
+      "userArn": null,
+      "userAgent": "curl/7.64.1",
+      "user": null
+    },
+    "domainName": "example.execute-api.us-east-1.amazonaws.com",
+    "apiId": "api-id"
+  },
+  "body": null,
+  "isBase64Encoded": false
+}

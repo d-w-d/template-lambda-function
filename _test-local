@@ -1,0 +1,54 @@
+#!/bin/bash
+set -e
+
+# Load environment variables
+source .env
+
+# Check for required environment variables
+if [ -z "$DOCKER_IMAGE_NAME" ]; then
+  echo "ERROR: DOCKER_IMAGE_NAME is not set in your .env file."
+  echo "Please add DOCKER_IMAGE_NAME=lambda-builder to your .env file and try again."
+  exit 1
+fi
+
+if [ -z "$DOCKER_IMAGE_TAG" ]; then
+  echo "ERROR: DOCKER_IMAGE_TAG is not set in your .env file."
+  echo "Please add DOCKER_IMAGE_TAG=latest to your .env file and try again."
+  exit 1
+fi
+
+# Check for AWS environment variables
+if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ -z "$AWS_REGION" ]; then
+  echo "ERROR: AWS credentials not properly set in your .env file."
+  echo "Please ensure AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION are set."
+  exit 1
+fi
+
+# Check if Docker is running
+if ! docker info >/dev/null 2>&1; then
+  echo "Docker is not running. Please start Docker and try again."
+  exit 1
+fi
+
+# Build the Docker image and run the build process
+echo "Building Lambda function using Docker..."
+./_build
+
+# Run Jest tests
+echo "Running tests..."
+npm test
+
+# Set up local environment for Lambda invocation
+echo "Setting up local environment..."
+export AWS_REGION=${AWS_REGION}
+export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+export S3_BUCKET_NAME=${S3_BUCKET_NAME}
+export S3_FILE_PREFIX=${S3_FILE_PREFIX}
+export CLOUDFRONT_DOMAIN="dummy-cloudfront-domain.cloudfront.net"
+
+# Run the Lambda function with a mock event
+echo "Invoking Lambda function locally..."
+npx aws-lambda-local-invoke -f dist/index.js -e test/mock/event.json -t 30000
+
+echo "Local test completed successfully!"

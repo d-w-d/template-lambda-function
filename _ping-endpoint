@@ -1,0 +1,39 @@
+#!/bin/bash
+set -e
+
+# Load environment variables
+source .env
+
+# Get the API Gateway URL
+cd infrastructure
+API_URL=$(tofu output -raw api_gateway_url)
+cd ..
+
+echo "Pinging API endpoint: ${API_URL}"
+
+# Make a GET request to the API endpoint
+response=$(curl -s "${API_URL}")
+
+# Print the response
+echo "Response:"
+echo "${response}" | json_pp
+
+# Extract URLs from the response
+s3_url=$(echo "${response}" | grep -o '"s3Url":"[^"]*"' | cut -d'"' -f4)
+cloudfront_url=$(echo "${response}" | grep -o '"cloudfrontUrl":"[^"]*"' | cut -d'"' -f4)
+
+echo ""
+echo "S3 URL: ${s3_url}"
+echo "CloudFront URL: ${cloudfront_url}"
+
+# Try to access the S3 URL
+echo ""
+echo "Accessing S3 URL..."
+curl -s "${s3_url}"
+
+echo ""
+echo "Accessing CloudFront URL..."
+curl -s "${cloudfront_url}"
+
+echo ""
+echo "Ping completed successfully!"

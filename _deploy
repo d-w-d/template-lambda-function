@@ -1,0 +1,34 @@
+#!/bin/bash
+set -e
+
+# Load environment variables
+source .env
+
+# Build and package the Lambda function
+echo "Building and packaging Lambda function..."
+npm run build:package
+
+# Initialize and apply OpenTofu configuration
+echo "Deploying infrastructure with OpenTofu..."
+cd infrastructure
+
+# Initialize OpenTofu
+tofu init
+
+# Apply the configuration with variables from .env
+tofu apply \
+  -var="aws_region=${AWS_REGION}" \
+  -var="aws_access_key_id=${AWS_ACCESS_KEY_ID}" \
+  -var="aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}" \
+  -var="lambda_function_name=${LAMBDA_FUNCTION_NAME}" \
+  -var="s3_bucket_name=${S3_BUCKET_NAME}" \
+  -var="s3_file_prefix=${S3_FILE_PREFIX}" \
+  -var="api_gateway_stage=${API_GATEWAY_STAGE}" \
+  -var="cloudfront_price_class=${CLOUDFRONT_PRICE_CLASS}"
+
+# Get the API Gateway URL from the outputs
+API_URL=$(tofu output -raw api_gateway_url)
+
+echo "Deployment completed successfully!"
+echo "API Gateway URL: ${API_URL}"
+echo "To test the endpoint, run: ./_ping-endpoint"
