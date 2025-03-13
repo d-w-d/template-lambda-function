@@ -1,15 +1,17 @@
 import { S3 } from "aws-sdk";
+import { IS3Config } from "./models/IS3Config";
 
+/**
+ * Service for interacting with AWS S3
+ */
 export class S3Service {
-  private s3: S3;
-  private bucketName: string;
-  private cloudfrontDomain: string;
+  private readonly s3: S3;
+  private readonly bucketName: string;
+  private readonly cloudfrontDomain: string;
 
   constructor(bucketName: string) {
-    // Configure AWS SDK with credentials from environment variables
+    // Use the default credential provider chain instead of explicit credentials
     this.s3 = new S3({
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       region: process.env.AWS_REGION || 'us-east-1'
     });
     this.bucketName = bucketName;
@@ -51,5 +53,17 @@ export class S3Service {
    */
   getCloudfrontUrl(key: string): string {
     return `https://${this.cloudfrontDomain}/${key}`;
+  }
+  
+  /**
+   * Get the current configuration of this S3 service
+   * @returns The S3 configuration
+   */
+  getConfig(): IS3Config {
+    return {
+      bucketName: this.bucketName,
+      filePrefix: process.env.S3_FILE_PREFIX || "",
+      cloudfrontDomain: this.cloudfrontDomain
+    };
   }
 }
