@@ -1,190 +1,24 @@
-# AWS Lambda S3 Writer
+# Template Lambda Function
 
-This project contains an AWS Lambda function that:
+This repository is intended to be used as a TEMPLATE for creating AWS infrastructure using terraform/tofu. This template inlcudes the following since they are the most common things that I tend to want to create using tofu/terraform.
 
-1. Is triggered by a GET request to an API Gateway endpoint
-2. Writes a "hello world" message to an S3 bucket
-3. Returns both a direct S3 URL and a CloudFront URL to access the file
+## Overview
 
-## Project Structure
+- Lambda function written in tsc and packaged in an AWS Docker container
+- API Gateway to expose the Lambda function via HTTP
+- S3 bucket to store files uploaded via the Lambda function
+- CloudFront distribution to front the API Gateway
 
-```
-lambda-s3-project/
-├── .env                      # Environment variables
-├── .env-template             # Template for environment variables
-├── .gitignore                # Git ignore file
-├── README.md                 # Project documentation (this file)
-├── package.json              # Node.js dependencies
-├── tsconfig.json             # TypeScript configuration
-├── jest.config.js            # Jest configuration for testing
-├── _deploy                   # Script to deploy the project
-├── _destroy_with_state       # Script to destroy AWS infrastructure using OpenTofu/Terraform state
-├── _destroy_without_state    # Script to destroy AWS infrastructure without OpenTofu/Terraform state
-├── _ping-endpoint            # Script to test the deployed endpoint
-├── _test-local               # Script to run local tests
-├── docker/
-│   ├── Dockerfile            # Docker image definition for build environment
-│   └── build.sh              # Script to build the project inside Docker
-├── src/
-│   ├── index.ts              # Lambda function entry point
-│   ├── s3Service.ts          # S3 interaction logic
-│   └── types.ts              # TypeScript type definitions
-├── test/
-│   ├── index.test.ts         # Tests for the Lambda function
-│   └── mock/                 # Mocks for AWS services
-│       └── event.json        # Mock API Gateway event
-└── infrastructure/
-    ├── main.tf               # Main OpenTofu configuration
-    ├── variables.tf          # OpenTofu variables
-    ├── outputs.tf            # OpenTofu outputs
-    ├── provider.tf           # AWS provider configuration
-    └── tfstate/              # OpenTofu state files
-```
+## Rationale
 
-## Prerequisites
+We only use terraform/tofu with AWS. We use a docker container so that our npm modules are installed/built on the target linux platform.
 
-- Docker installed and running
-- AWS account with appropriate permissions
-- OpenTofu installed (or Terraform)
-- Node.js and npm installed locally
-- AWS CLI configured (optional, but helpful for troubleshooting)
+I have opted for very simple scripts to operate this repo, in order to promote user familiarity with the CLI tools. The \_docker script just prints out and wraps around the docker build and run commands needed, and the \_tf_guide reminds the user how to use terraform/tofu to deploy the infrastructure.
 
-## Cleanup Options
+## Terraform/Tofu Config and State Files
 
-This project provides two different ways to clean up AWS resources:
+Everything related to state is kept in root dir; placing files elesewhere complicates terminal commands, and makes the user dependent on wrapper scripts. See \_tf_guide for details.
 
-1. **_destroy_with_state** (Default)
-   - Uses OpenTofu/Terraform state to track and remove resources
-   - Requires intact state files in the infrastructure directory
-   - More reliable when state is available
-   - Usage: `./_destroy_with_state` or `npm run destroy`
+## Misc Notes
 
-2. **_destroy_without_state**
-   - Uses AWS CLI commands to remove resources based on naming conventions
-   - Works when OpenTofu/Terraform state is lost or corrupted
-   - Depends only on environment variables in your `.env` file
-   - Usage: `./_destroy_without_state`
-
-Choose the appropriate option based on whether you have valid state files.
-
-## Setup Instructions
-
-1. Clone the repository
-2. Create a `.env` file with the required environment variables (see .env-template)
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Build the Docker image and package:
-   ```bash
-   npm run build
-   ```
-5. Test locally:
-   ```bash
-   npm test
-   ```
-6. Deploy to AWS:
-   ```bash
-   npm run deploy
-   ```
-7. Test the deployed endpoint:
-   ```bash
-   ./_ping-endpoint
-   ```
-8. To remove all AWS resources:
-   ```bash
-   npm run destroy
-   ```
-
-## Usage Guide
-
-Here's a quick reference for the available npm scripts:
-
-- `npm run build:docker` - Create the Docker image for building
-- `npm run build:package` - Create the Lambda package zip
-- `npm run build` - Build both Docker image and Lambda package
-- `npm run test` - Run TypeScript compiler and Jest tests
-- `npm run deploy` - Deploy to AWS (builds package first)
-- `npm run destroy` - Remove all AWS resources (uses OpenTofu state)
-- `./_destroy_with_state` - Remove all AWS resources using OpenTofu state
-- `./_destroy_without_state` - Remove AWS resources without requiring OpenTofu state
-- `npm run all` - Complete build and deploy workflow
-
-## Environment Variables
-
-The following environment variables should be defined in the `.env` file:
-
-- `aws_region`: AWS region (e.g., us-east-1)
-- `aws_access_key_id`: Your AWS access key
-- `aws_secret_access_key`: Your AWS secret key
-- `S3_BUCKET_NAME`: Name of the S3 bucket to create and use
-- `S3_FILE_PREFIX`: Prefix for files in S3 (default: hello-world)
-- `CLOUDFRONT_PRICE_CLASS`: CloudFront price class (default: PriceClass_100)
-- `API_GATEWAY_STAGE`: API Gateway stage name (default: prod)
-
-## How it Works
-
-1. The Lambda function is triggered by a GET request to the API Gateway endpoint
-2. It generates a timestamp and creates a text file with a "Hello World" message
-3. The file is uploaded to the S3 bucket with public read permissions
-4. The function returns a JSON response with:
-   - A message confirming successful upload
-   - A direct S3 URL to access the file
-   - A CloudFront URL to access the file (with caching)
-   - The timestamp
-
-## OpenTofu Infrastructure
-
-The OpenTofu configuration creates:
-
-1. S3 bucket for storing the files
-2. IAM role for the Lambda function with S3 read/write permissions
-3. Lambda function deployment
-4. API Gateway to expose the Lambda function
-5. CloudFront distribution pointing to the S3 bucket
-
-### State File Management
-
-This project uses a dedicated directory structure for OpenTofu state:
-
-- **Configuration files** (`.tf`): Stored in the `infrastructure/` directory and tracked in version control
-- **State files** (`.tfstate`): Stored in the `infrastructure/tfstate/` directory and excluded from version control
-
-This separation is an infrastructure best practice that:
-- Prevents accidental commits of sensitive state information
-- Reduces the risk of state file corruption
-- Makes it clearer which files should be in version control
-
-For production environments, consider upgrading to a remote state backend (like S3 + DynamoDB).
-
-## Local Testing
-
-The local testing script:
-
-1. Builds the TypeScript code in Docker
-2. Runs unit tests using Jest
-3. Sets up environment variables for local development
-4. Invokes the function with a mock API Gateway event
-
-## Deployment
-
-The deployment script:
-
-1. Builds and packages the Lambda function in Docker
-2. Initializes OpenTofu
-3. Applies the OpenTofu configuration
-4. Outputs the API Gateway URL
-
-## Troubleshooting
-
-If you encounter issues:
-
-- Check AWS credentials in `.env` file
-- Ensure Docker is running
-- Verify OpenTofu is installed
-- Check for permissions issues in AWS
-- Look for errors in CloudWatch Logs
-
-## License
-
-MIT
+- TF_VAR_LAMBDA_ARCHITECTURE="x86_64": you will get generally better compatibility with npm modules with x86, but the cold start times are slower and the cost is slightly higher. If you swap to "arm64", you will need to change the Dockerfile to use the arm64 version of the AWS lambda base image!

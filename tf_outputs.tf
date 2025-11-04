@@ -1,6 +1,6 @@
 output "api_gateway_url" {
   description = "URL of the API Gateway endpoint"
-  value       = "${aws_api_gateway_deployment.lambda_deployment.invoke_url}${aws_api_gateway_resource.lambda_resource.path}"
+  value       = "${aws_api_gateway_stage.lambda_stage.invoke_url}${aws_api_gateway_resource.lambda_resource.path}"
 }
 
 output "cloudfront_domain" {

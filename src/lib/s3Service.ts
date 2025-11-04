@@ -1,5 +1,5 @@
 import { S3 } from "aws-sdk";
-import { IS3Config } from "./models/IS3Config";
+import { IS3Config } from "../models/IS3Config";
 
 /**
  * Service for interacting with AWS S3
@@ -12,7 +12,7 @@ export class S3Service {
   constructor(bucketName: string) {
     // Use the default credential provider chain instead of explicit credentials
     this.s3 = new S3({
-      region: process.env.AWS_REGION || 'us-east-1'
+      region: process.env.AWS_REGION || "us-east-1",
     });
     this.bucketName = bucketName;
     this.cloudfrontDomain = process.env.CLOUDFRONT_DOMAIN || "";
@@ -54,7 +54,7 @@ export class S3Service {
   getCloudfrontUrl(key: string): string {
     return `https://${this.cloudfrontDomain}/${key}`;
   }
-  
+
   /**
    * Get the current configuration of this S3 service
    * @returns The S3 configuration
@@ -63,7 +63,7 @@ export class S3Service {
     return {
       bucketName: this.bucketName,
       filePrefix: process.env.S3_FILE_PREFIX || "",
-      cloudfrontDomain: this.cloudfrontDomain
+      cloudfrontDomain: this.cloudfrontDomain,
     };
   }
 }

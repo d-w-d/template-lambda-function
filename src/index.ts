@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { S3Service } from "./s3Service";
+import { S3Service } from "./lib/s3Service";
 import { ILambdaResponse } from "./models/ILambdaResponse";
 import { IErrorResponse } from "./models/IErrorResponse";
 
@@ -7,11 +7,13 @@ import { IErrorResponse } from "./models/IErrorResponse";
  * Create content for the S3 file with a timestamp
  * @returns Object containing content and key
  */
-const createFileContent = (filePrefix: string): { content: string; key: string; timestamp: string } => {
+const createFileContent = (
+  filePrefix: string
+): { content: string; key: string; timestamp: string } => {
   const timestamp = new Date().toISOString();
   const content = `Hello World! Generated at ${timestamp}`;
   const key = `${filePrefix}-${timestamp}.txt`;
-  
+
   return { content, key, timestamp };
 };
 
@@ -23,8 +25,8 @@ const createFileContent = (filePrefix: string): { content: string; key: string; 
  * @returns The formatted Lambda response
  */
 const createSuccessResponse = (
-  s3Url: string, 
-  cloudfrontUrl: string, 
+  s3Url: string,
+  cloudfrontUrl: string,
   timestamp: string
 ): APIGatewayProxyResult => {
   const response: ILambdaResponse = {
@@ -99,7 +101,7 @@ export const handler = async (
     return createSuccessResponse(s3Url, cloudfrontUrl, timestamp);
   } catch (error) {
     console.error("Error in Lambda function:", error);
-    
+
     // Return error response
     return createErrorResponse(error as Error);
   }

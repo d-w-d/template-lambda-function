@@ -19,6 +19,7 @@ echo "Creating deployment package..."
 cd dist
 zip -r ../lambda-deployment.zip .
 cd ..
-zip -g lambda-deployment.zip node_modules/**
+# Include runtime dependencies (globstar is not required with -r)
+zip -r lambda-deployment.zip node_modules > /dev/null
 
 echo "Build completed successfully!"

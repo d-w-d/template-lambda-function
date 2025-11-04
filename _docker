@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+#
+# This script intentionally echoes the exact Docker commands it runs.
+# Seeing the full command string helps keep the workflow transparent
+# and avoids the "black box" feeling of wrapper scripts.
+
+set -euo pipefail
+IFS=$'\n\t'
+
+# Enable BuildKit for faster and more efficient Docker builds.
+# First run: docker buildx install
+export DOCKER_BUILDKIT=1
+
+if [[ ! -f ".env" ]]; then
+  echo "Missing .env file. Copy .env-template and configure required values." >&2
+  exit 1
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker command not found. Install Docker and try again." >&2
+  exit 1
+fi
+
+highlight() {
+  printf '\033[1;36m%s\033[0m\n' "$1"
+}
+
+# shellcheck disable=SC1091
+source .env
+
+if [[ -z "${DOCKER_IMAGE_NAME:-}" ]]; then
+  echo "DOCKER_IMAGE_NAME must be set in .env" >&2
+  exit 1
+fi
+
+if [[ -z "${DOCKER_IMAGE_TAG:-}" ]]; then
+  echo "DOCKER_IMAGE_TAG must be set in .env" >&2
+  exit 1
+fi
+
+project_dir="$(pwd)"
+build_cmd="docker build --tag \"${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}\" --file docker/Dockerfile ."
+run_cmd="docker run --rm --memory=4g --volume \"${project_dir}:/app\" \"${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}\" /app/docker/build.sh"
+
+echo "The .env file has been sourced. Do you wish to proceed with these docker commands:"
+highlight "${build_cmd}"
+highlight "${run_cmd}"
+echo
+
+read -r -p "Continue? [y/N] " confirmation
+case "${confirmation}" in
+  [Yy]|[Yy][Ee][Ss]) ;;
+  *) echo "Aborted."; exit 0 ;;
+esac
+
+highlight "Executing: ${build_cmd}"
+eval "${build_cmd}"
+
+highlight "Executing: ${run_cmd}"
+eval "${run_cmd}"
+
+if [[ -f "lambda.zip" ]]; then
+  rm lambda.zip
+fi
+
+if [[ ! -f "lambda-deployment.zip" ]]; then
+  echo "Expected lambda-deployment.zip was not generated." >&2
+  exit 1
+fi
+
+mv lambda-deployment.zip lambda.zip
+echo "Lambda package created at lambda.zip"

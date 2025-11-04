@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+cat <<'EOF'
+Terraform / OpenTofu Command Guide
+==================================
+
+Before running commands:
+  source .env
+
+Core workflow:
+  tofu init
+  tofu plan
+  tofu apply
+
+After apply (inspect outputs):
+  tofu output
+  tofu output -raw api_gateway_url   # Endpoint URL
+
+Managing infrastructure:
+  tofu state list                    # Show current resources
+  tofu destroy                       # Delete infrastructure
+
+Other useful commands:
+  tofu plan -destroy
+  tofu fmt
+  tofu providers schema
+EOF

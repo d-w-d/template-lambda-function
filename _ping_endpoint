@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+if ! command -v tofu >/dev/null 2>&1; then
+  echo "OpenTofu (tofu) is not installed or not in PATH." >&2
+  exit 1
+fi
+
+echo "Fetching API endpoint from terraform outputs..."
+api_url="$(tofu output -raw api_gateway_url 2>/dev/null || true)"
+
+if [[ -z "${api_url}" ]]; then
+  echo "Failed to resolve api_gateway_url. Ensure you've run 'source .env' and 'tofu apply'." >&2
+  exit 1
+fi
+
+echo "Pinging ${api_url}"
+response="$(curl --fail --show-error --silent "${api_url}")" || {
+  echo "Request failed." >&2
+  exit 1
+}
+
+if command -v jq >/dev/null 2>&1; then
+  echo "${response}" | jq '.'
+else
+  echo "${response}"
+fi
+
+echo "Lambda invocation succeeded."

@@ -3,7 +3,7 @@ node_modules/
 
 # Build outputs
 dist/
-lambda-deployment.zip
+lambda.zip
 
 # OpenTofu files
 .terraform/
@@ -11,7 +11,6 @@ lambda-deployment.zip
 *.tfstate.backup
 .terraform.lock.hcl
 *.tfvars
-infrastructure/tfstate/
 
 # Environment variables
 .env
