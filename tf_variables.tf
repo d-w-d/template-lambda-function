@@ -1,3 +1,8 @@
+variable "DID_YOU_SOURCE_ENV" {
+  description = "This is a reminder to ALWAYS source .env before using tofu/terrform"
+  type        = string
+}
+
 variable "AWS_REGION" {
   description = "AWS region"
   type        = string

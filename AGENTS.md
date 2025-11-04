@@ -9,6 +9,10 @@ This repo is a template for building AWS lambda functions with tsc and deploying
 - Never read or write to .env file
 - Never read or write files outside of this repo without my persmission
 
+## File Structure
+
+- See [here](https://github.com/d-w-d/sbn-lambda-S3-write-template) for template repo structure
+
 ## Technical Design Guidelines
 
 - Typescript
@@ -50,8 +54,9 @@ This repo is a template for building AWS lambda functions with tsc and deploying
 
 - Terraform / Open-Tofu
 
-  - All infrastructure as code files should be placed in the `./infrastructure` directory.
-  - Follow best practices for organizing Terraform/Open-Tofu code, such as using modules and separating resources by environment.
+  - All `.tf` files should be placed in the root directory and prefixed `tf_`.
+  - For simplicity sake, we do NOT use modules
+  - Always use a `tf_variables.tf` file to define all variables; many will be passed by sourcing `.env`
 
 - Lambda Configuration
 
