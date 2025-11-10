@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+#
+# Create a CloudFront invalidation for the deployed distribution.
+
+set -euo pipefail
+IFS=$'\n\t'
+
+if [[ ! -f ".env" ]]; then
+  echo "Missing .env file. Copy .env-template and configure required values." >&2
+  exit 1
+fi
+
+# shellcheck disable=SC1091
+source .env
+
+if ! command -v tofu >/dev/null 2>&1; then
+  echo "OpenTofu (tofu) is not installed or not in PATH." >&2
+  exit 1
+fi
+
+if ! command -v aws >/dev/null 2>&1; then
+  echo "AWS CLI not found. Install it to run invalidations." >&2
+  exit 1
+fi
+
+distribution_id=$(tofu output -raw cloudfront_distribution_id 2>/dev/null || true)
+
+if [[ -z "${distribution_id}" ]]; then
+  echo "Failed to resolve cloudfront_distribution_id. Deploy infrastructure first." >&2
+  exit 1
+fi
+
+if [[ $# -gt 0 ]]; then
+  paths=("$@")
+else
+  paths=("/latest.txt")
+fi
+caller_ref="invalidate-$(date +%s)"
+
+echo "Creating invalidation on distribution ${distribution_id} for paths: ${paths[*]}"
+
+aws cloudfront create-invalidation \
+  --distribution-id "${distribution_id}" \
+  --paths "${paths[@]}" \
+  --caller-reference "${caller_ref}" >/dev/null
+
+echo "Invalidation submitted. Caller reference: ${caller_ref}"

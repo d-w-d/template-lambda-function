@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Helper script for interactive debugging inside the base AWS container.
+# Runs amazonlinux:2 with a shell so you can experiment with installing Node, nvm, etc.
+
+set -euo pipefail
+IFS=$'\n\t'
+
+IMAGE="amazonlinux:2"
+IMAGE="public.ecr.aws/amazonlinux/amazonlinux:2023"
+
+echo "Pulling ${IMAGE}..."
+docker pull "${IMAGE}"
+
+echo "Starting interactive shell in ${IMAGE}."
+docker run --rm -it "${IMAGE}" /bin/bash

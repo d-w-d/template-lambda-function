@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+#
+# Fetch the latest.txt artifact via the deployed CloudFront distribution.
+
+set -euo pipefail
+IFS=$'\n\t'
+
+if [[ ! -f ".env" ]]; then
+  echo "Missing .env file. Copy .env-template and configure required values." >&2
+  exit 1
+fi
+
+# shellcheck disable=SC1091
+source .env
+
+if ! command -v tofu >/dev/null 2>&1; then
+  echo "OpenTofu (tofu) is not installed or not in PATH." >&2
+  exit 1
+fi
+
+echo "Resolving CloudFront domain via terraform outputs..."
+cloudfront_domain=$(tofu output -raw cloudfront_domain 2>/dev/null || true)
+
+if [[ -x "./_cloudfront_invalidate" ]]; then
+  ./_cloudfront_invalidate >/dev/null 2>&1 || true
+fi
+
+if [[ -z "${cloudfront_domain}" ]]; then
+  echo "Could not resolve cloudfront_domain output. Run '_tf output' to verify deployment." >&2
+  exit 1
+fi
+
+url="https://${cloudfront_domain}/latest.txt"
+echo "Fetching ${url}" && echo
+
+curl --fail --show-error --location --silent --write-out '\nHTTP %{http_code}\n' "${url}"

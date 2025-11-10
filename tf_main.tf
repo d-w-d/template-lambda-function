@@ -1,10 +1,19 @@
+provider "aws" {
+  region = var.AWS_REGION
+
+  # Prevent Terraform from loading shared config files so that env vars are the single source of truth.
+  shared_config_files      = ["${path.module}/.no_aws_config"]
+  shared_credentials_files = ["${path.module}/.no_aws_credentials"]
+}
+
 locals {
   bucket_name          = "${var.PROJECT_PREFIX}${var.S3_BUCKET_NAME}"
   lambda_function_name = "${var.PROJECT_PREFIX}${var.LAMBDA_FUNCTION_NAME}"
   iam_role_name        = "${var.PROJECT_PREFIX}${var.LAMBDA_FUNCTION_NAME}-role"
   iam_policy_name      = "${var.PROJECT_PREFIX}iam-policy"
   api_gateway_name     = "${var.PROJECT_PREFIX}api"
-  api_gateway_access_log_group_name = "/aws/apigateway/${var.PROJECT_PREFIX}${var.API_GATEWAY_STAGE}/access"
+  lambda_runtime       = var.LAMBDA_RUNTIME
+  api_gateway_access_log_group_name = "/aws/apigateway/${var.PROJECT_PREFIX}${var.LAMBDA_DEPLOYMENT}/access"
   api_gateway_logging_role_name     = "${var.PROJECT_PREFIX}apigw-logs-role"
 }
 
@@ -16,27 +25,53 @@ resource "aws_s3_bucket" "lambda_bucket" {
 resource "aws_s3_bucket_public_access_block" "lambda_bucket_public_access" {
   bucket = aws_s3_bucket.lambda_bucket.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  block_public_acls       = !var.S3_PUBLIC_READ
+  block_public_policy     = !var.S3_PUBLIC_READ
+  ignore_public_acls      = !var.S3_PUBLIC_READ
+  restrict_public_buckets = !var.S3_PUBLIC_READ
+}
+
+data "aws_iam_policy_document" "lambda_bucket" {
+  statement {
+    sid    = "AllowCloudFrontAccess"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.lambda_bucket.arn}/*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceArn"
+      values   = [aws_cloudfront_distribution.s3_distribution.arn]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = var.S3_PUBLIC_READ ? [1] : []
+
+    content {
+      sid    = "PublicReadGetObject"
+      effect = "Allow"
+
+      principals {
+        type        = "*"
+        identifiers = ["*"]
+      }
+
+      actions   = ["s3:GetObject"]
+      resources = ["${aws_s3_bucket.lambda_bucket.arn}/*"]
+    }
+  }
 }
 
 resource "aws_s3_bucket_policy" "lambda_bucket_policy" {
   bucket = aws_s3_bucket.lambda_bucket.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject"
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = "s3:GetObject"
-        Resource  = "${aws_s3_bucket.lambda_bucket.arn}/*"
-      }
-    ]
-  })
+  policy = data.aws_iam_policy_document.lambda_bucket.json
 
   depends_on = [aws_s3_bucket_public_access_block.lambda_bucket_public_access]
 }
@@ -48,7 +83,7 @@ resource "aws_lambda_function" "s3_writer_lambda" {
   role             = aws_iam_role.lambda_role.arn
   handler          = "index.handler"
   description      = var.LAMBDA_FUNCTION_DESC
-  runtime          = var.LAMBDA_RUNTIME
+  runtime          = local.lambda_runtime
   timeout          = var.LAMBDA_MAX_RUNTIME_SECONDS
   architectures    = [var.LAMBDA_ARCHITECTURE]
   source_code_hash = filebase64sha256("lambda.zip")
@@ -196,9 +231,13 @@ resource "aws_api_gateway_integration" "lambda_integration" {
 resource "aws_lambda_permission" "api_gateway_lambda" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.s3_writer_lambda.function_name
+  function_name = aws_lambda_function.s3_writer_lambda.arn
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.lambda_api.execution_arn}/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.lambda_api.execution_arn}/${aws_api_gateway_stage.lambda_stage.stage_name}/${aws_api_gateway_method.lambda_method.http_method}${aws_api_gateway_resource.lambda_resource.path}"
+
+  depends_on = [
+    aws_api_gateway_stage.lambda_stage
+  ]
 }
 
 resource "aws_api_gateway_deployment" "lambda_deployment" {
@@ -207,6 +246,9 @@ resource "aws_api_gateway_deployment" "lambda_deployment" {
   ]
 
   rest_api_id = aws_api_gateway_rest_api.lambda_api.id
+  triggers = {
+    redeploy = aws_lambda_function.s3_writer_lambda.source_code_hash
+  }
 }
 
 resource "aws_cloudwatch_log_group" "api_gateway_access_logs" {
@@ -216,7 +258,7 @@ resource "aws_cloudwatch_log_group" "api_gateway_access_logs" {
 
 resource "aws_api_gateway_stage" "lambda_stage" {
   rest_api_id   = aws_api_gateway_rest_api.lambda_api.id
-  stage_name    = var.API_GATEWAY_STAGE
+  stage_name    = var.LAMBDA_DEPLOYMENT
   deployment_id = aws_api_gateway_deployment.lambda_deployment.id
 
   access_log_settings {
@@ -265,11 +307,25 @@ resource "aws_api_gateway_method_settings" "logging" {
   ]
 }
 
+# CloudFront origin access control to keep the S3 bucket private.
+resource "aws_cloudfront_origin_access_control" "s3_oac" {
+  name                              = "${var.PROJECT_PREFIX}s3-oac"
+  description                       = "Origin access control for ${local.bucket_name}"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
 # CloudFront Distribution
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
-    domain_name = aws_s3_bucket.lambda_bucket.bucket_regional_domain_name
-    origin_id   = "S3Origin"
+    domain_name              = aws_s3_bucket.lambda_bucket.bucket_regional_domain_name
+    origin_id                = "S3Origin"
+    origin_access_control_id = aws_cloudfront_origin_access_control.s3_oac.id
+
+    s3_origin_config {
+      origin_access_identity = ""
+    }
   }
 
   enabled             = true

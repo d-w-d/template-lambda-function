@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "./_docker",
-    "tf:guide": "./_tf_guide"
+    "tf:guide": "./_tf"
   },
   "dependencies": {
     "aws-sdk": "^2.1231.0"

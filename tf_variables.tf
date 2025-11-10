@@ -1,7 +1,3 @@
-variable "DID_YOU_SOURCE_ENV" {
-  description = "This is a reminder to ALWAYS source .env before using tofu/terrform"
-  type        = string
-}
 
 variable "AWS_REGION" {
   description = "AWS region"
@@ -12,6 +8,12 @@ variable "PROJECT_PREFIX" {
   description = "Unique, descriptive prefix applied to named resources. Must end with a hyphen if you plan to append suffixes."
   type        = string
   default     = "sbn-lambda-s3-template-"
+}
+
+variable "LAMBDA_RUNTIME" {
+  description = "Lambda runtime identifier (e.g., nodejs22.x or provided.al2023)."
+  type        = string
+  default     = "nodejs22.x"
 }
 
 variable "LAMBDA_FUNCTION_NAME" {
@@ -25,12 +27,6 @@ variable "LAMBDA_FUNCTION_DESC" {
   default     = ""
 }
 
-variable "LAMBDA_RUNTIME" {
-  description = "Runtime for the Lambda function"
-  type        = string
-  default     = "nodejs22.x"
-}
-
 variable "LAMBDA_ARCHITECTURE" {
   description = "Architecture for the Lambda function"
   type        = string
@@ -41,12 +37,6 @@ variable "LAMBDA_MAX_RUNTIME_SECONDS" {
   description = "Maximum runtime (timeout) for the Lambda function"
   type        = number
   default     = 30
-}
-
-variable "LAMBDA_DEPLOYMENT" {
-  description = "Deployment label for the Lambda function"
-  type        = string
-  default     = "prod"
 }
 
 variable "LAMBDA_LOGS_TO_CLOUDWATCH" {
@@ -72,8 +62,14 @@ variable "S3_FILE_PREFIX" {
   default     = "hello-world"
 }
 
-variable "API_GATEWAY_STAGE" {
-  description = "Stage name for API Gateway"
+variable "S3_PUBLIC_READ" {
+  description = "Set to true to allow public read access to the bucket (creates permissive policy)."
+  type        = bool
+  default     = false
+}
+
+variable "LAMBDA_DEPLOYMENT" {
+  description = "Deployment label for the Lambda function and API Gateway stage"
   type        = string
   default     = "prod"
 }

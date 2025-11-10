@@ -1,8 +1,23 @@
 # Repository Guidelines
 
-## Purpose
+## Repo Essentials
 
-This repo is a template for building AWS lambda functions with tsc and deploying with terraform/open-tofu. It will be used as a starting repo for new lambda functions. As such, it needs to follow strict conventions to ensure consistency across multiple repos for creating and maintaining lambda functions.
+This repo is for building AWS lambda functions with tsc and deploying with terraform/open-tofu. This repo MUST have the following essential files and folders:
+
+- docker/Dockerfile
+- docker/build.sh
+- .env-template
+- tf_main.tf
+- tf_variables.tf
+- tf_outputs.tf
+- src/index.ts
+- package.json
+- tsconfig.json
+- \_docker
+- \_tf
+- AGENTS.md
+
+All other scripts and files are on a per-project basis.
 
 ## Security
 
@@ -42,15 +57,13 @@ This repo is a template for building AWS lambda functions with tsc and deploying
 
 - Operational BASH Scripts
 
-  - Operate this repo with bash scripts in the root dir, prefixed with '\_' and with no suffix (e.g., `_deploy`)
-
-  - If needed, break scripts apart into sourcable chunks placed in the `./scripts` directory.
+  - Operate this repo with bash scripts in the root dir, prefixed with '\_' and with no suffix (e.g., `_docker`)
 
   - Whenever you update a script, run `shellcheck [script]` to ensure compliance with best practices.
 
 - Docker
 
-  - We build build all lambdas within an AWS container to ensure compatibility. All docker-related files should be placed in the `./docker` directory.
+  - We build all lambdas within an AWS container to ensure compatibility. All docker-related files should be placed in the `./docker` directory.
 
 - Terraform / Open-Tofu
 

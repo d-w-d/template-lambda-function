@@ -1,12 +1,4 @@
-FROM amazonlinux:2
-
-# Install dependencies
-RUN yum update -y && \
-  yum install -y zip unzip curl
-
-# Install Node.js 16.x
-RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash - && \
-  yum install -y nodejs
+FROM public.ecr.aws/sam/build-nodejs22.x
 
 # Set working directory
 WORKDIR /app

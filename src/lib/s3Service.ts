@@ -41,9 +41,12 @@ export class S3Service {
    * @param key - The S3 object key
    * @returns The S3 URL
    */
-  getSignedUrl(key: string): string {
-    // For public files, we can simply construct the URL
-    return `https://${this.bucketName}.s3.amazonaws.com/${key}`;
+  getSignedUrl(key: string, expiresInSeconds = 300): string {
+    return this.s3.getSignedUrl("getObject", {
+      Bucket: this.bucketName,
+      Key: key,
+      Expires: expiresInSeconds,
+    });
   }
 
   /**

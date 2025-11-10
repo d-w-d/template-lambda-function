@@ -2,7 +2,8 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-cat <<'EOF'
+print_help() {
+  cat <<'EOF'
 Terraform / OpenTofu Command Guide
 ==================================
 
@@ -27,3 +28,25 @@ Other useful commands:
   tofu fmt
   tofu providers schema
 EOF
+}
+
+if [[ ! -f ".env" ]]; then
+  echo "Missing .env file. Copy .env-template and configure required values." >&2
+  exit 1
+fi
+
+# shellcheck disable=SC1091
+source .env
+
+if [[ $# -eq 0 ]]; then
+  print_help
+  exit 0
+fi
+
+if ! command -v tofu >/dev/null 2>&1; then
+  echo "OpenTofu (tofu) is not installed or not in PATH." >&2
+  exit 1
+fi
+
+echo "Running: tofu $*"
+exec tofu "$@"
