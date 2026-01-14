@@ -53,6 +53,7 @@ All other scripts and files are on a per-project basis.
 - env vars
 
   - Use environment variables for configuration settings that may change between deployments or environments.
+  - Capitalize environment variable names with underscores (e.g., `DB_HOST`, `API_KEY`).
   - Document all environment variables in `README.md` and `.env-template`.
 
 - Operational BASH Scripts
